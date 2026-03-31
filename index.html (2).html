@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>JG Tecnico — Gestión Financiera</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0D2137; --navy2:#162E4A; --navy3:#1E3A5C;
+  --gold:#C9A227; --gold2:#E8BC3A; --gold-dim:rgba(201,162,39,0.12);
+  --green:#1E8449; --green2:#27AE60; --green-dim:rgba(39,174,96,0.12);
+  --red:#C0392B; --red2:#E74C3C; --red-dim:rgba(192,57,43,0.12);
+  --orange:#E67E22; --orange-dim:rgba(230,126,34,0.12);
+  --blue:#2E75B6; --blue-dim:rgba(46,117,182,0.12);
+  --white:#FFFFFF; --off:#F4F6F9;
+  --text:#E8EDF2; --muted:#7A8FA6; --border:rgba(201,162,39,0.18);
+  --radius:12px; --shadow:0 4px 24px rgba(0,0,0,0.4);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;overflow-x:hidden;}
+input,select,textarea{font-family:'DM Sans',sans-serif;}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100;transition:transform 0.3s;}
+.main-content{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{height:56px;background:var(--navy2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:50;}
+.page{padding:20px;flex:1;}
+
+/* ── SIDEBAR ── */
+.sidebar-brand{padding:20px 16px;border-bottom:1px solid var(--border);}
+.brand-logo{width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:var(--navy);margin-bottom:8px;box-shadow:0 4px 16px rgba(201,162,39,0.3);}
+.brand-name{font-size:13px;font-weight:700;color:var(--white);}
+.brand-sub{font-size:10px;color:var(--muted);}
+.nav-section{padding:12px 8px 4px;}
+.nav-label{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:0 8px;margin-bottom:4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;margin-bottom:2px;cursor:pointer;transition:all 0.2s;}
+.nav-item:hover{background:rgba(255,255,255,0.05);}
+.nav-item.active{background:var(--gold-dim);border:1px solid rgba(201,162,39,0.25);}
+.nav-icon{font-size:15px;width:20px;text-align:center;}
+.nav-text{font-size:11px;font-weight:500;color:var(--muted);}
+.nav-item.active .nav-text{color:var(--gold);font-weight:600;}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+.user-info{display:flex;align-items:center;gap:10px;}
+.user-avatar{width:32px;height:32px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--navy);}
+.user-name{font-size:11px;font-weight:600;color:var(--white);}
+.user-role{font-size:9px;color:var(--muted);}
+
+/* ── TOPBAR ── */
+.page-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--white);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.btn-add{background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(201,162,39,0.3);}
+.menu-toggle{display:none;background:none;border:none;color:var(--white);font-size:20px;padding:4px;}
+
+/* ── CARDS ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;}
+.kpi-card{background:var(--navy2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi-card.green::before{background:linear-gradient(90deg,var(--green),var(--green2));}
+.kpi-card.gold::before{background:linear-gradient(90deg,var(--gold),var(--gold2));}
+.kpi-card.red::before{background:linear-gradient(90deg,var(--red),var(--red2));}
+.kpi-card.orange::before{background:linear-gradient(90deg,var(--orange),#F39C12);}
+.kpi-card.blue::before{background:linear-gradient(90deg,var(--blue),#5DADE2);}
+.kpi-label{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.kpi-value{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--white);line-height:1;}
+.kpi-value.green{color:var(--green2);}
+.kpi-value.gold{color:var(--gold2);}
+.kpi-value.red{color:var(--red2);}
+.kpi-value.orange{color:var(--orange);}
+.kpi-value.blue{color:#5DADE2;}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+
+/* ── SEMAFORO ── */
+.semaforo{background:var(--navy2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.sem-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+.sem-dot.green{background:var(--green2);box-shadow:0 0 10px var(--green2);animation:pulse 2s infinite;}
+.sem-dot.yellow{background:#F4D03F;box-shadow:0 0 10px #F4D03F;}
+.sem-dot.red{background:var(--red2);box-shadow:0 0 10px var(--red2);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+.sem-info{flex:1;}
+.sem-title{font-size:13px;font-weight:700;}
+.sem-title.green{color:var(--green2);}
+.sem-title.yellow{color:#F4D03F;}
+.sem-title.red{color:var(--red2);}
+.sem-desc{font-size:11px;color:var(--muted);}
+.sem-liq{text-align:right;}
+.sem-liq-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;}
+.sem-liq-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:600;color:#5DADE2;}
+
+/* ── PANELS ── */
+.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.panel{background:var(--navy2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.panel-title{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.8px;}
+.panel-badge{font-size:9px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:2px 7px;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:var(--navy3);color:var(--gold);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;padding:10px 12px;text-align:left;white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text);white-space:nowrap;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;}
+.badge.cobrado{background:var(--green-dim);color:var(--green2);}
+.badge.pendiente{background:var(--orange-dim);color:var(--orange);}
+.badge.cancelado{background:var(--red-dim);color:var(--red2);}
+.badge.proceso{background:var(--blue-dim);color:#5DADE2;}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;}
+.form-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--white);transition:border 0.2s;outline:none;}
+.form-input:focus{border-color:rgba(201,162,39,0.4);background:rgba(201,162,39,0.04);}
+.form-input option{background:var(--navy2);}
+.form-calc{background:var(--green-dim);border:1px solid rgba(39,174,96,0.2);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
+.calc-label{font-size:10px;color:var(--green2);font-weight:600;}
+.calc-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--green2);font-weight:700;}
+.form-sug{background:var(--gold-dim);border:1px solid rgba(201,162,39,0.2);border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;}
+.sug-label{font-size:10px;color:var(--gold);}
+.sug-val{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold2);font-weight:600;}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;padding:12px 24px;font-size:13px;font-weight:700;color:var(--navy);box-shadow:0 4px 16px rgba(201,162,39,0.3);transition:transform 0.2s;}
+.btn-primary:hover{transform:translateY(-1px);}
+.btn-secondary{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 20px;font-size:12px;font-weight:600;color:var(--text);}
+.btn-danger{background:var(--red-dim);border:1px solid rgba(192,57,43,0.3);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:var(--red2);}
+
+/* ── META DIARIA ── */
+.meta-bar-track{height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin:6px 0;}
+.meta-bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green2));border-radius:4px;box-shadow:0 0 8px var(--green2);transition:width 0.5s;}
+.meta-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);}
+.meta-labels span:last-child{color:var(--green2);}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--navy2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--navy2);z-index:10;}
+.modal-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--white);}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+.modal-body{padding:20px;}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+
+/* ── ALERTS ── */
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.alert.success{background:var(--green-dim);border:1px solid rgba(39,174,96,0.2);color:var(--green2);}
+.alert.error{background:var(--red-dim);border:1px solid rgba(192,57,43,0.2);color:var(--red2);}
+.alert.info{background:var(--blue-dim);border:1px solid rgba(46,117,182,0.2);color:#5DADE2;}
+
+/* ── RESUMEN ZENTRAL ── */
+.empresa-card{background:var(--navy3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;}
+.empresa-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.empresa-name{font-size:13px;font-weight:700;color:var(--gold);}
+.empresa-total{font-family:'DM Mono',monospace;font-size:14px;color:var(--green2);font-weight:600;}
+.coordinador-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.03);margin-bottom:4px;}
+.coord-info{font-size:11px;color:var(--text);}
+.coord-sub{font-size:10px;color:var(--muted);}
+.coord-monto{font-family:'DM Mono',monospace;font-size:12px;color:var(--green2);}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-content{margin-left:0;}
+  .menu-toggle{display:block;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .panel-grid{grid-template-columns:1fr;}
+  .page-title{font-size:15px;}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;}
+  .overlay.open{display:block;}
+}
+@media(max-width:400px){
+  .kpi-grid{grid-template-columns:1fr;}
+}
+
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--muted);}
+.spinner{width:24px;height:24px;border:2px solid rgba(255,255,255,0.1);border-top:2px solid var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:10px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── CHART ── */
+.chart-container{position:relative;height:180px;}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:30px;color:var(--muted);}
+.empty-icon{font-size:32px;margin-bottom:8px;}
+.empty-text{font-size:12px;}
+
+/* ── SECTION TITLE ── */
+.section-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+/* ── AHORROS PROGRESS ── */
+.meta-item{background:var(--navy3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+.meta-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.meta-item-name{font-size:12px;font-weight:600;color:var(--text);}
+.meta-item-status{font-size:10px;font-weight:600;}
+.meta-item-status.alcanzada{color:var(--green2);}
+.meta-item-status.progreso{color:#F4D03F;}
+.meta-item-status.pendiente{color:var(--red2);}
+
+/* ── LOGIN ── */
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--navy);padding:20px;}
+.login-box{background:var(--navy2);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:380px;box-shadow:var(--shadow);}
+.login-logo{width:56px;height:56px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:24px;font-weight:900;color:var(--navy);margin:0 auto 16px;box-shadow:0 8px 24px rgba(201,162,39,0.3);}
+.login-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--white);text-align:center;margin-bottom:4px;}
+.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:28px;}
+.login-error{background:var(--red-dim);border:1px solid rgba(192,57,43,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--red2);margin-bottom:16px;display:none;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="login-page">
+  <div class="login-box">
+    <div class="login-logo">JG</div>
+    <div class="login-title">Jhonny Graterol</div>
+    <div class="login-sub">Sistema de Gestión Financiera</div>
+    <div id="loginError" class="login-error">Usuario o contraseña incorrectos</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">Usuario</label>
+      <input type="text" id="loginUser" class="form-input" placeholder="jhonny" autocomplete="username">
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label class="form-label">Contraseña</label>
+      <input type="password" id="loginPass" class="form-input" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appPage" class="app" style="display:none">
+
+  <!-- Overlay mobile -->
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">JG</div>
+      <div class="brand-name">Jhonny Graterol</div>
+      <div class="brand-sub">Técnico Independiente</div>
+    </div>
+    <nav style="flex:1;overflow-y:auto;padding-bottom:8px">
+      <div class="nav-section">
+        <div class="nav-label">Principal</div>
+        <div class="nav-item active" onclick="showPage('monitor')">
+          <span class="nav-icon">📊</span><span class="nav-text">Monitor Principal</span>
+        </div>
+        <div class="nav-item" onclick="showPage('trabajos')">
+          <span class="nav-icon">📝</span><span class="nav-text">Registro Trabajos</span>
+        </div>
+        <div class="nav-item" onclick="showPage('gastos')">
+          <span class="nav-icon">💸</span><span class="nav-text">Gastos Diarios</span>
+        </div>
+        <div class="nav-item" onclick="showPage('fijos')">
+          <span class="nav-icon">🏠</span><span class="nav-text">Gastos Fijos</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Finanzas</div>
+        <div class="nav-item" onclick="showPage('ahorros')">
+          <span class="nav-icon">🏦</span><span class="nav-text">Ahorros</span>
+        </div>
+        <div class="nav-item" onclick="showPage('metas')">
+          <span class="nav-icon">🎯</span><span class="nav-text">Metas Financieras</span>
+        </div>
+        <div class="nav-item" onclick="showPage('clientes')">
+          <span class="nav-icon">👥</span><span class="nav-text">Clientes</span>
+        </div>
+        <div class="nav-item" onclick="showPage('analisis')">
+          <span class="nav-icon">📈</span><span class="nav-text">Análisis</span>
+        </div>
+        <div class="nav-item" onclick="showPage('meta_diaria')">
+          <span class="nav-icon">💡</span><span class="nav-text">Meta Diaria S/.10</span>
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">JG</div>
+        <div>
+          <div class="user-name">Jhonny Graterol</div>
+          <div class="user-role">Lima, Perú</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="page-title" id="pageTitle">Monitor Principal</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-add" onclick="openAddModal()" id="btnAdd">+ Nuevo</button>
+        <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="doLogout()">Salir</button>
+      </div>
+    </div>
+
+    <!-- PAGES -->
+    <div class="page" id="pageContent"></div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO TRABAJO -->
+<div class="modal-overlay" id="modalTrabajo">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📝 Nuevo Trabajo</div>
+      <button class="modal-close" onclick="closeModal('modalTrabajo')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="margin-bottom:12px">
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <input type="text" id="t_desc" class="form-input" placeholder="Ej: Cambio de chapa">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de Servicio</label>
+          <select id="t_tipo" class="form-input">
+            <option value="">Seleccionar...</option>
+            <option>Electricidad</option><option>Plomería</option><option>Pintura</option>
+            <option>Cerrajería</option><option>Aire Acondicionado</option>
+            <option>Mixtos</option><option>Proyectos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input type="date" id="t_fecha" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de Cliente</label>
+          <select id="t_tipo_cliente" class="form-input" onchange="updateClienteFields()">
+            <option value="independiente">👤 Cliente independiente</option>
+            <option value="empresa_oficina">🏢 Empresa (oficina directa)</option>
+            <option value="empresa_coord">🏢 Empresa (coordinador)</option>
+          </select>
+        </div>
+        <div class="form-group" id="grp_cliente">
+          <label class="form-label">Cliente / Empresa</label>
+          <input type="text" id="t_cliente" class="form-input" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-group" id="grp_coord" style="display:none">
+          <label class="form-label">Coordinador</label>
+          <input type="text" id="t_coordinador" class="form-input" placeholder="Nombre del coordinador">
+        </div>
+        <div class="form-group" id="grp_edificio" style="display:none">
+          <label class="form-label">Edificio / Referencia</label>
+          <input type="text" id="t_edificio" class="form-input" placeholder="Ej: Galicia, Miraflores">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Distrito</label>
+          <select id="t_distrito" class="form-input">
+            <option value="">Seleccionar...</option>
+            <option>Miraflores</option><option>San Isidro</option><option>Surco</option>
+            <option>La Molina</option><option>San Borja</option><option>Barranco</option>
+            <option>Lince</option><option>Jesus Maria</option><option>Pueblo Libre</option>
+            <option>Magdalena</option><option>San Miguel</option><option>Breña</option>
+            <option>Rimac</option><option>Chorrillos</option><option>Villa Maria del Triunfo</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid" style="margin-bottom:12px">
+        <div class="form-group">
+          <label class="form-label">Costo Cobrado (S/.)</label>
+          <input type="number" id="t_cobrado" class="form-input" placeholder="0.00" oninput="calcGanancia()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Materiales (S/.)</label>
+          <input type="number" id="t_materiales" class="form-input" placeholder="0.00" oninput="calcGanancia()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pago Terceros (S/.)</label>
+          <input type="number" id="t_terceros" class="form-input" placeholder="0.00" oninput="calcGanancia()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">¿Cobrado?</label>
+          <select id="t_pagado" class="form-input" onchange="calcGanancia()">
+            <option value="Si">✅ Sí — Ya me pagaron</option>
+            <option value="No">⏳ No — Trabajo a crédito</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-calc" style="margin-bottom:8px">
+        <div class="calc-label">⚡ Ganancia Neta</div>
+        <div class="calc-val" id="calc_ganancia">S/. 0.00</div>
+      </div>
+      <div class="form-sug" style="margin-bottom:12px">
+        <div class="sug-label">💡 10% sugerido al ahorro</div>
+        <div class="sug-val" id="calc_sug">S/. 0.00</div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Depositar al Ahorro (S/.) — opcional</label>
+        <input type="number" id="t_deposito" class="form-input" placeholder="Ingresa monto a depositar...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estado</label>
+        <select id="t_estado" class="form-input">
+          <option>Completado</option><option>Pendiente</option>
+          <option>En Proceso</option><option>Cancelado</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modalTrabajo')">Cancelar</button>
+      <button class="btn-primary" onclick="saveTrabajo()">Guardar Trabajo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GASTO -->
+<div class="modal-overlay" id="modalGasto">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💸 Nuevo Gasto</div>
+      <button class="modal-close" onclick="closeModal('modalGasto')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <input type="text" id="g_desc" class="form-input" placeholder="Ej: Almuerzo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoría</label>
+          <select id="g_cat" class="form-input">
+            <option>Alimentación</option><option>Transporte</option><option>Materiales</option>
+            <option>Herramientas</option><option>Comunicaciones</option><option>Salud</option>
+            <option>Entretenimiento</option><option>Ropa</option><option>Educación</option><option>Otros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto (S/.)</label>
+          <input type="number" id="g_monto" class="form-input" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input type="date" id="g_fecha" class="form-input">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modalGasto')">Cancelar</button>
+      <button class="btn-primary" onclick="saveGasto()">Guardar Gasto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RETIRO AHORRO -->
+<div class="modal-overlay" id="modalRetiro">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">🏦 Registrar Retiro</div>
+      <button class="modal-close" onclick="closeModal('modalRetiro')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Concepto</label>
+          <input type="text" id="r_desc" class="form-input" placeholder="Ej: Retiro para herramientas">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select id="r_tipo" class="form-input">
+            <option>Retiro para meta</option><option>Retiro emergencia</option>
+            <option>Retiro personal</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto (S/.)</label>
+          <input type="number" id="r_monto" class="form-input" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input type="date" id="r_fecha" class="form-input">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modalRetiro')">Cancelar</button>
+      <button class="btn-primary" onclick="saveRetiro()">Guardar Retiro</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIG SUPABASE
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL = 'https://inihzfhvwokdjbfcetac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_X8qK220Aj5OyVXAmX7CD0w_R62jF1ne';
+
+async function sb(endpoint, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method==='POST' ? 'return=representation' : ''
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + endpoint, opts);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════
+// AUTH (simple)
+// ═══════════════════════════════════════════════════
+const USERS = {jhonny: 'jg2026'};
+let loggedIn = localStorage.getItem('jg_auth') === '1';
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+  const p = document.getElementById('loginPass').value;
+  if (USERS[u] && USERS[u] === p) {
+    localStorage.setItem('jg_auth','1');
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('appPage').style.display = 'flex';
+    initApp();
+  } else {
+    document.getElementById('loginError').style.display = 'flex';
+  }
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  localStorage.removeItem('jg_auth');
+  location.reload();
+}
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let trabajos=[], gastos=[], retiros=[], fijos={}, metas=[];
+let currentPage = 'monitor';
+let chartInstance = null;
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+async function initApp() {
+  setDefaultDates();
+  await createTablesIfNeeded();
+  await loadAll();
+  showPage('monitor');
+}
+
+function setDefaultDates() {
+  const today = new Date().toISOString().split('T')[0];
+  ['t_fecha','g_fecha','r_fecha'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = today;
+  });
+}
+
+async function createTablesIfNeeded() {
+  // Tables are created via SQL in Supabase — we just try to fetch and handle errors
+  try { await sb('trabajos?limit=1'); } catch(e) { /* table might not exist yet */ }
+}
+
+async function loadAll() {
+  try {
+    trabajos = await sb('trabajos?order=fecha.desc&limit=5000') || [];
+  } catch(e) { trabajos = []; }
+  try {
+    gastos = await sb('gastos?order=fecha.desc&limit=10000') || [];
+  } catch(e) { gastos = []; }
+  try {
+    retiros = await sb('retiros?order=fecha.desc&limit=2000') || [];
+  } catch(e) { retiros = []; }
+  try {
+    const mArr = await sb('metas?order=monto_objetivo.asc&limit=100') || [];
+    metas = mArr;
+  } catch(e) { metas = []; }
+  try {
+    const fArr = await sb('gastos_fijos?limit=100') || [];
+    fArr.forEach(f => { fijos[f.nombre] = fijos[f.nombre] || {}; fijos[f.nombre][f.mes] = f.monto; });
+  } catch(e) { fijos = {}; }
+}
+
+// ═══════════════════════════════════════════════════
+// CALCULOS FINANCIEROS
+// ═══════════════════════════════════════════════════
+function calcFinanzas() {
+  const totalCobrado = trabajos.filter(t=>t.cobrado==='Si').reduce((s,t)=>s+(t.costo_cobrado||0),0);
+  const totalGanancia = trabajos.filter(t=>t.cobrado==='Si').reduce((s,t)=>s+(t.ganancia_neta||0),0);
+  const totalGastosDiarios = gastos.reduce((s,g)=>s+(g.monto||0),0);
+  const totalFijos = Object.values(fijos).reduce((s,mObj)=>s+Object.values(mObj).reduce((a,b)=>a+b,0),0);
+  const totalDepositos = trabajos.reduce((s,t)=>s+(t.deposito_ahorro||0),0);
+  const totalRetiros = retiros.reduce((s,r)=>s+(r.monto||0),0);
+  const totalAhorrado = totalDepositos - totalRetiros;
+  const porCobrar = trabajos.filter(t=>t.cobrado==='No').reduce((s,t)=>s+(t.ganancia_neta||0),0);
+  const invertidoNoCobrado = trabajos.filter(t=>t.cobrado==='No').reduce((s,t)=>s+(t.materiales||0)+(t.pago_terceros||0),0);
+  const liquidez = totalGanancia - totalGastosDiarios - totalFijos - totalDepositos + totalRetiros;
+  const sug10 = trabajos.reduce((s,t)=>s+(t.sugerido_ahorro||0),0);
+  return {totalCobrado,totalGanancia,totalGastosDiarios,totalFijos,totalDepositos,totalRetiros,totalAhorrado,porCobrar,invertidoNoCobrado,liquidez,sug10};
+}
+
+function getSemaforo(ganancia, gastos_total) {
+  if(ganancia === 0) return {class:'yellow', text:'Sin datos aún', desc:'Ingresa tus trabajos para ver el estado'};
+  const ratio = (ganancia - gastos_total) / ganancia;
+  if(ratio >= 0.3) return {class:'green', text:'🟢 VERDE — Excelente', desc:`Tu ganancia supera los gastos en ${(ratio*100).toFixed(0)}%`};
+  if(ratio >= 0.1) return {class:'yellow', text:'🟡 AMARILLO — Atención', desc:`Margen ajustado: ${(ratio*100).toFixed(0)}% — revisa gastos`};
+  return {class:'red', text:'🔴 ROJO — Crítico', desc:'Los gastos igualan o superan tu ganancia'};
+}
+
+function fmt(n) { return 'S/. ' + (n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function fmtDate(d) { if(!d) return '—'; const p=d.split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+
+// ═══════════════════════════════════════════════════
+// PAGES
+// ═══════════════════════════════════════════════════
+const pageTitles = {
+  monitor:'Monitor Principal', trabajos:'Registro de Trabajos',
+  gastos:'Gastos Diarios', fijos:'Gastos Fijos', ahorros:'Ahorros',
+  metas:'Metas Financieras', clientes:'Clientes', analisis:'Análisis',
+  meta_diaria:'Meta Diaria S/. 10'
+};
+
+const addLabels = {
+  monitor:'+ Nuevo Trabajo', trabajos:'+ Nuevo Trabajo',
+  gastos:'+ Nuevo Gasto', fijos:'', ahorros:'+ Registrar Retiro',
+  metas:'', clientes:'', analisis:'', meta_diaria:''
+};
+
+function showPage(page) {
+  if(chartInstance) { chartInstance.destroy(); chartInstance=null; }
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => {
+    if(el.getAttribute('onclick')?.includes(page)) el.classList.add('active');
+  });
+  document.getElementById('pageTitle').textContent = pageTitles[page]||page;
+  const btnAdd = document.getElementById('btnAdd');
+  if(addLabels[page]) { btnAdd.style.display='flex'; btnAdd.textContent=addLabels[page]; }
+  else { btnAdd.style.display='none'; }
+  closeSidebar();
+
+  const content = document.getElementById('pageContent');
+  switch(page) {
+    case 'monitor': content.innerHTML = renderMonitor(); initChart(); break;
+    case 'trabajos': content.innerHTML = renderTrabajos(); break;
+    case 'gastos': content.innerHTML = renderGastos(); break;
+    case 'fijos': content.innerHTML = renderFijos(); break;
+    case 'ahorros': content.innerHTML = renderAhorros(); break;
+    case 'metas': content.innerHTML = renderMetas(); break;
+    case 'clientes': content.innerHTML = renderClientes(); break;
+    case 'analisis': content.innerHTML = renderAnalisis(); initChartAnalisis(); break;
+    case 'meta_diaria': content.innerHTML = renderMetaDiaria(); break;
+  }
+}
+
+// ─── MONITOR ───────────────────────────────────────
+function renderMonitor() {
+  const f = calcFinanzas();
+  const sem = getSemaforo(f.totalGanancia, f.totalGastosDiarios + f.totalFijos);
+  const hoy = new Date(); const inicio = new Date(hoy.getFullYear(),0,1);
+  const diasAno = Math.floor((hoy-inicio)/(1000*60*60*24));
+  const metaAhorro = diasAno * 10;
+  const pctMeta = metaAhorro > 0 ? Math.min(f.totalAhorrado/metaAhorro*100,100) : 0;
+
+  const ultTrabajos = trabajos.slice(0,6);
+
+  return `
+  <div class="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-label">Total Cobrado</div>
+      <div class="kpi-value green">${fmt(f.totalCobrado)}</div>
+      <div class="kpi-sub">${trabajos.filter(t=>t.cobrado==='Si').length} trabajos cobrados</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Ganancia Neta</div>
+      <div class="kpi-value green">${fmt(f.totalGanancia)}</div>
+      <div class="kpi-sub">Cobrado - Mat. - Terceros</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Gastos Totales</div>
+      <div class="kpi-value red">${fmt(f.totalGastosDiarios + f.totalFijos)}</div>
+      <div class="kpi-sub">Diarios + Fijos</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">Total Ahorrado</div>
+      <div class="kpi-value gold">${fmt(f.totalAhorrado)}</div>
+      <div class="kpi-sub">10% sug: ${fmt(f.sug10)}</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Por Cobrar</div>
+      <div class="kpi-value orange">${fmt(f.porCobrar)}</div>
+      <div class="kpi-sub">${trabajos.filter(t=>t.cobrado==='No').length} trabajos pendientes</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">💧 Liquidez Real</div>
+      <div class="kpi-value blue">${fmt(f.liquidez)}</div>
+      <div class="kpi-sub">Ganancia - Gastos - Ahorro</div>
+    </div>
+  </div>
+
+  <div class="semaforo">
+    <div class="sem-dot ${sem.class}"></div>
+    <div class="sem-info">
+      <div class="sem-title ${sem.class}">${sem.text}</div>
+      <div class="sem-desc">${sem.desc}</div>
+    </div>
+    <div class="sem-liq">
+      <div class="sem-liq-label">Meta S/.10 diarios</div>
+      <div class="sem-liq-val">${pctMeta.toFixed(0)}%</div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-header">
+      <div class="panel-title">Meta Diaria S/. 10 — Año ${hoy.getFullYear()}</div>
+      <div class="panel-badge">${fmt(f.totalAhorrado)} de ${fmt(metaAhorro)}</div>
+    </div>
+    <div class="meta-bar-track"><div class="meta-bar-fill" style="width:${pctMeta}%"></div></div>
+    <div class="meta-labels"><span>Ahorrado: ${fmt(f.totalAhorrado)}</span><span>Meta a hoy: ${fmt(metaAhorro)} · ${pctMeta.toFixed(1)}%</span></div>
+  </div>
+
+  <div class="panel-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Últimos Trabajos</div>
+        <div class="panel-badge">${trabajos.length} total</div>
+      </div>
+      ${ultTrabajos.length === 0 ? `<div class="empty"><div class="empty-icon">📝</div><div class="empty-text">No hay trabajos aún</div></div>` :
+        `<table><thead><tr><th>Descripción</th><th>Cliente</th><th>Ganancia</th><th>Estado</th></tr></thead><tbody>
+        ${ultTrabajos.map(t=>`<tr>
+          <td>${t.descripcion||'—'}</td>
+          <td>${t.empresa ? (t.coordinador ? t.empresa+' / '+t.coordinador : t.empresa+' (Oficina)') : (t.cliente||'—')}</td>
+          <td style="color:var(--green2);font-family:'DM Mono',monospace">${fmt(t.ganancia_neta)}</td>
+          <td><span class="badge ${t.cobrado==='Si'?'cobrado':'pendiente'}">${t.cobrado==='Si'?'Cobrado':'Pendiente'}</span></td>
+        </tr>`).join('')}
+        </tbody></table>`
+      }
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Ganancia vs Gastos 2026</div>
+      </div>
+      <div class="chart-container"><canvas id="chartMonitor"></canvas></div>
+    </div>
+  </div>`;
+}
+
+function initChart() {
+  const ctx = document.getElementById('chartMonitor');
+  if(!ctx) return;
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const ganData = meses.map((_,i) => {
+    return trabajos.filter(t=>t.cobrado==='Si' && new Date(t.fecha).getMonth()===i && new Date(t.fecha).getFullYear()===2026)
+      .reduce((s,t)=>s+(t.ganancia_neta||0),0);
+  });
+  const gastosData = meses.map((_,i) => {
+    return gastos.filter(g=>new Date(g.fecha).getMonth()===i && new Date(g.fecha).getFullYear()===2026)
+      .reduce((s,g)=>s+(g.monto||0),0);
+  });
+  chartInstance = new Chart(ctx, {
+    type:'bar',
+    data:{labels:meses, datasets:[
+      {label:'Ganancia',data:ganData,backgroundColor:'rgba(39,174,96,0.7)',borderColor:'#27AE60',borderWidth:1,borderRadius:4},
+      {label:'Gastos',data:gastosData,backgroundColor:'rgba(192,57,43,0.7)',borderColor:'#C0392B',borderWidth:1,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7A8FA6',font:{size:10}}}},
+      scales:{x:{ticks:{color:'#7A8FA6',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},
+              y:{ticks:{color:'#7A8FA6',font:{size:9},callback:v=>'S/.'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}
+  });
+}
+
+// ─── TRABAJOS ────────────────────────────────────
+function renderTrabajos() {
+  return `
+  <div class="section-title">Todos los Trabajos</div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Fecha</th><th>Descripción</th><th>Cliente / Empresa</th><th>Distrito</th><th>Tipo</th><th>Cobrado</th><th>Materiales</th><th>Terceros</th><th>Ganancia</th><th>10% Sug.</th><th>Depositado</th><th>Estado Cobro</th><th>Acciones</th></tr></thead>
+    <tbody>
+    ${trabajos.length===0 ? `<tr><td colspan="14" style="text-align:center;color:var(--muted);padding:30px">No hay trabajos registrados aún</td></tr>` :
+      trabajos.map((t,i)=>`<tr>
+        <td style="color:var(--muted);font-size:10px">${trabajos.length-i}</td>
+        <td>${fmtDate(t.fecha)}</td>
+        <td>${t.descripcion||'—'}</td>
+        <td>${t.empresa ? (t.coordinador ? `<b>${t.empresa}</b><br><span style="font-size:10px;color:var(--muted)">${t.coordinador}${t.edificio?' · '+t.edificio:''}</span>` : `<b>${t.empresa}</b><br><span style="font-size:10px;color:var(--gold)">Oficina directa</span>`) : (t.cliente||'—')}</td>
+        <td>${t.distrito||'—'}</td>
+        <td><span style="font-size:10px;color:var(--muted)">${t.tipo||'—'}</span></td>
+        <td style="font-family:'DM Mono',monospace;color:var(--green2)">${fmt(t.costo_cobrado)}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--muted)">${fmt(t.materiales)}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--muted)">${fmt(t.pago_terceros)}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--green2);font-weight:700">${fmt(t.ganancia_neta)}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--gold)">${fmt(t.sugerido_ahorro)}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--gold2)">${fmt(t.deposito_ahorro)}</td>
+        <td><span class="badge ${t.cobrado==='Si'?'cobrado':'pendiente'}">${t.cobrado||'—'}</span></td>
+        <td><button class="btn-danger" onclick="deleteTrabajo('${t.id}')">🗑</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  </div>`;
+}
+
+// ─── GASTOS ─────────────────────────────────────
+function renderGastos() {
+  const resumen = {};
+  gastos.forEach(g => {
+    const m = new Date(g.fecha).toLocaleString('es',{month:'long'});
+    resumen[m] = (resumen[m]||0) + (g.monto||0);
+  });
+  return `
+  <div class="panel-grid" style="margin-bottom:16px">
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Resumen Mensual 2026</div></div>
+      ${['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map(m=>`
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <span style="font-size:12px;color:var(--text)">${m}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:${resumen[m.toLowerCase()]>0?'var(--red2)':'var(--muted)'}">${fmt(resumen[m.toLowerCase()]||0)}</span>
+        </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;margin-top:4px">
+        <span style="font-size:12px;font-weight:700;color:var(--red2)">TOTAL</span>
+        <span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--red2);font-weight:700">${fmt(gastos.reduce((s,g)=>s+(g.monto||0),0))}</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Por Categoría</div></div>
+      ${['Alimentación','Transporte','Materiales','Herramientas','Comunicaciones','Salud','Entretenimiento','Ropa','Educación','Otros'].map(cat=>{
+        const total = gastos.filter(g=>g.categoria===cat).reduce((s,g)=>s+(g.monto||0),0);
+        return total>0 ? `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <span style="font-size:11px;color:var(--text)">${cat}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--red2)">${fmt(total)}</span>
+        </div>` : '';
+      }).join('')}
+    </div>
+  </div>
+  <div class="section-title">Detalle de Gastos</div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th>Acciones</th></tr></thead>
+    <tbody>
+    ${gastos.length===0 ? `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No hay gastos registrados aún</td></tr>` :
+      gastos.map((g,i)=>`<tr>
+        <td style="color:var(--muted);font-size:10px">${gastos.length-i}</td>
+        <td>${fmtDate(g.fecha)}</td>
+        <td>${g.descripcion||'—'}</td>
+        <td><span style="font-size:10px;color:var(--muted)">${g.categoria||'—'}</span></td>
+        <td style="font-family:'DM Mono',monospace;color:var(--red2)">${fmt(g.monto)}</td>
+        <td><button class="btn-danger" onclick="deleteGasto('${g.id}')">🗑</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  </div>`;
+}
+
+// ─── FIJOS ──────────────────────────────────────
+function renderFijos() {
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const nombres = ['Alquiler','Internet','Netflix','Spotify','Teléfono','Gimnasio','Luz','Agua','Otros'];
+  const mesActual = new Date().getMonth()+1;
+  return `
+  <div class="section-title">Gastos Fijos Mensuales</div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Gasto</th>${meses.map(m=>`<th>${m.slice(0,3)}</th>`).join('')}<th>Total Anual</th><th>Estado</th></tr></thead>
+    <tbody>
+    ${nombres.map(nom=>{
+      const total = Object.values(fijos[nom]||{}).reduce((s,v)=>s+v,0);
+      const mesActualVal = (fijos[nom]||{})[mesActual]||0;
+      return `<tr>
+        <td style="font-weight:600;color:var(--gold)">${nom}</td>
+        ${meses.map((_,i)=>`<td>
+          <input type="number" value="${(fijos[nom]||{})[i+1]||''}" placeholder="0"
+            style="width:65px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:4px 6px;font-size:11px;color:var(--white);font-family:'DM Mono',monospace"
+            onchange="saveFijo('${nom}',${i+1},this.value)">
+        </td>`).join('')}
+        <td style="font-family:'DM Mono',monospace;color:var(--green2);font-weight:700">${fmt(total)}</td>
+        <td><span class="badge ${mesActualVal>0?'cobrado':'pendiente'}">${mesActualVal>0?'✅ OK':'⚠️ Pendiente'}</span></td>
+      </tr>`;
+    }).join('')}
+    <tr style="background:rgba(46,117,182,0.08)">
+      <td style="font-weight:700;color:var(--blue)">TOTAL MENSUAL</td>
+      ${meses.map((_,i)=>{
+        const tot = nombres.reduce((s,n)=>s+((fijos[n]||{})[i+1]||0),0);
+        return `<td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--green2)">${tot>0?fmt(tot):''}</td>`;
+      }).join('')}
+      <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--green2)">${fmt(nombres.reduce((s,n)=>s+Object.values(fijos[n]||{}).reduce((a,b)=>a+b,0),0))}</td>
+      <td></td>
+    </tr>
+    </tbody>
+  </table>
+  </div>`;
+}
+
+// ─── AHORROS ────────────────────────────────────
+function renderAhorros() {
+  const f = calcFinanzas();
+  return `
+  <div class="kpi-grid" style="margin-bottom:16px">
+    <div class="kpi-card green">
+      <div class="kpi-label">Total Depositado</div>
+      <div class="kpi-value green">${fmt(f.totalDepositos)}</div>
+      <div class="kpi-sub">Desde Registro de Trabajos</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Total Retirado</div>
+      <div class="kpi-value red">${fmt(f.totalRetiros)}</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">Saldo Disponible</div>
+      <div class="kpi-value gold">${fmt(f.totalAhorrado)}</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">10% Sugerido</div>
+      <div class="kpi-value blue">${fmt(f.sug10)}</div>
+      <div class="kpi-sub">Diferencia: ${fmt(f.totalDepositos - f.sug10)}</div>
+    </div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-header"><div class="panel-title">Depósitos por Trabajo</div><div class="panel-badge">automático desde Registro</div></div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fecha</th><th>Trabajo</th><th>Depositado</th><th>10% Sugerido</th></tr></thead>
+      <tbody>
+      ${trabajos.filter(t=>t.deposito_ahorro>0).length===0 ?
+        `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No hay depósitos registrados aún</td></tr>` :
+        trabajos.filter(t=>(t.deposito_ahorro||0)>0).map(t=>`<tr>
+          <td>${fmtDate(t.fecha)}</td>
+          <td>${t.descripcion||'—'}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--gold2)">${fmt(t.deposito_ahorro)}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--muted)">${fmt(t.sugerido_ahorro)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="section-title">Retiros Registrados</div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Fecha</th><th>Concepto</th><th>Tipo</th><th>Monto</th><th>Acciones</th></tr></thead>
+    <tbody>
+    ${retiros.length===0 ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No hay retiros registrados</td></tr>` :
+      retiros.map(r=>`<tr>
+        <td>${fmtDate(r.fecha)}</td>
+        <td>${r.descripcion||'—'}</td>
+        <td><span style="font-size:10px;color:var(--muted)">${r.tipo||'—'}</span></td>
+        <td style="font-family:'DM Mono',monospace;color:var(--red2)">${fmt(r.monto)}</td>
+        <td><button class="btn-danger" onclick="deleteRetiro('${r.id}')">🗑</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  </div>`;
+}
+
+// ─── METAS ─────────────────────────────────────
+function renderMetas() {
+  const f = calcFinanzas();
+  const saldo = f.totalAhorrado;
+  return `
+  <div class="panel" style="margin-bottom:16px;border-color:rgba(201,162,39,0.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="kpi-label">💰 Total Ahorrado Disponible</div>
+        <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--green2)">${fmt(saldo)}</div>
+      </div>
+      <button class="btn-primary" onclick="openMetaModal()">+ Nueva Meta</button>
+    </div>
+  </div>
+  <div class="section-title">Tus Metas — ordenadas de menor a mayor</div>
+  ${metas.length===0 ? `<div class="empty"><div class="empty-icon">🎯</div><div class="empty-text">No hay metas aún. ¡Agrega tu primera meta!</div></div>` :
+    metas.map(m=>{
+      const pct = m.monto_objetivo > 0 ? Math.min(saldo/m.monto_objetivo*100,100) : 0;
+      const cubierta = saldo >= m.monto_objetivo;
+      const status = cubierta ? 'alcanzada' : pct>=50 ? 'progreso' : 'pendiente';
+      const statusText = cubierta ? '✅ Puedes cubrirla' : `❌ Faltan ${fmt(m.monto_objetivo-saldo)}`;
+      return `
+      <div class="meta-item">
+        <div class="meta-item-header">
+          <div>
+            <div class="meta-item-name">${m.nombre}</div>
+            <div style="font-size:10px;color:var(--muted)">Objetivo: ${fmt(m.monto_objetivo)}${m.fecha_limite?' · Fecha: '+fmtDate(m.fecha_limite):''}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="meta-item-status ${status}">${statusText}</div>
+            <div style="font-size:10px;color:var(--muted)">${pct.toFixed(1)}%</div>
+          </div>
+        </div>
+        <div class="meta-bar-track"><div class="meta-bar-fill" style="width:${pct}%;background:${cubierta?'linear-gradient(90deg,var(--green),var(--green2))':pct>=50?'linear-gradient(90deg,#B7950B,#F4D03F)':'linear-gradient(90deg,var(--red),var(--red2))'}"></div></div>
+      </div>`;
+    }).join('')}`;
+}
+
+// ─── CLIENTES ───────────────────────────────────
+function renderClientes() {
+  // Agrupar trabajos por cliente/empresa
+  const empresas = {};
+  const independientes = {};
+
+  trabajos.forEach(t => {
+    if(t.empresa) {
+      if(!empresas[t.empresa]) empresas[t.empresa] = {oficina:[], coordinadores:{}};
+      if(t.coordinador) {
+        if(!empresas[t.empresa].coordinadores[t.coordinador]) empresas[t.empresa].coordinadores[t.coordinador] = [];
+        empresas[t.empresa].coordinadores[t.coordinador].push(t);
+      } else {
+        empresas[t.empresa].oficina.push(t);
+      }
+    } else if(t.cliente) {
+      if(!independientes[t.cliente]) independientes[t.cliente] = [];
+      independientes[t.cliente].push(t);
+    }
+  });
+
+  const calcEmpresa = (arr) => ({
+    trabajos: arr.length,
+    cobrado: arr.reduce((s,t)=>s+(t.costo_cobrado||0),0),
+    ganancia: arr.reduce((s,t)=>s+(t.ganancia_neta||0),0),
+    pendiente: arr.filter(t=>t.cobrado==='No').reduce((s,t)=>s+(t.ganancia_neta||0),0),
+  });
+
+  return `
+  <div class="section-title">Empresas</div>
+  ${Object.entries(empresas).map(([emp, data]) => {
+    const allT = [...data.oficina, ...Object.values(data.coordinadores).flat()];
+    const tot = calcEmpresa(allT);
+    return `
+    <div class="empresa-card">
+      <div class="empresa-header">
+        <div class="empresa-name">🏢 ${emp}</div>
+        <div class="empresa-total">${fmt(tot.ganancia)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+        <div style="text-align:center"><div class="kpi-label">Trabajos</div><div style="font-size:16px;font-weight:700;color:var(--white)">${tot.trabajos}</div></div>
+        <div style="text-align:center"><div class="kpi-label">Cobrado</div><div style="font-size:13px;font-weight:700;color:var(--green2);font-family:'DM Mono',monospace">${fmt(tot.cobrado)}</div></div>
+        <div style="text-align:center"><div class="kpi-label">Pendiente</div><div style="font-size:13px;font-weight:700;color:var(--orange);font-family:'DM Mono',monospace">${fmt(tot.pendiente)}</div></div>
+      </div>
+      ${data.oficina.length>0 ? `
+        <div class="coordinador-row">
+          <div><div class="coord-info">🏢 Oficina Directa</div><div class="coord-sub">${data.oficina.length} trabajos</div></div>
+          <div class="coord-monto">${fmt(calcEmpresa(data.oficina).ganancia)}</div>
+        </div>` : ''}
+      ${Object.entries(data.coordinadores).map(([coord, tArr]) => {
+        const ct = calcEmpresa(tArr);
+        return `<div class="coordinador-row">
+          <div><div class="coord-info">👤 ${coord}</div><div class="coord-sub">${tArr.map(t=>t.edificio||t.descripcion).filter(Boolean).slice(0,2).join(' · ')||ct.trabajos+' trabajos'}</div></div>
+          <div class="coord-monto">${fmt(ct.ganancia)}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('')}
+
+  <div class="section-title" style="margin-top:16px">Clientes Independientes</div>
+  ${Object.entries(independientes).length===0 ? `<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No hay clientes independientes aún</div></div>` :
+    `<div class="table-wrap"><table>
+      <thead><tr><th>Cliente</th><th>Trabajos</th><th>Total Cobrado</th><th>Ganancia</th><th>Pendiente</th><th>Frecuencia</th></tr></thead>
+      <tbody>
+      ${Object.entries(independientes).map(([cli, tArr]) => {
+        const ct = calcEmpresa(tArr);
+        return `<tr>
+          <td style="font-weight:600">${cli}</td>
+          <td style="text-align:center">${ct.trabajos}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--green2)">${fmt(ct.cobrado)}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--green2);font-weight:700">${fmt(ct.ganancia)}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--orange)">${fmt(ct.pendiente)}</td>
+          <td><span class="badge ${ct.trabajos>1?'cobrado':'proceso'}">${ct.trabajos>1?'Frecuente':'Único'}</span></td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table></div>`}`;
+}
+
+// ─── ANALISIS ───────────────────────────────────
+function renderAnalisis() {
+  const mesesN = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const rows = mesesN.map((mes,i) => {
+    const tMes = trabajos.filter(t=>new Date(t.fecha).getMonth()===i && new Date(t.fecha).getFullYear()===2026);
+    const cobrado = tMes.filter(t=>t.cobrado==='Si').reduce((s,t)=>s+(t.costo_cobrado||0),0);
+    const ganancia = tMes.filter(t=>t.cobrado==='Si').reduce((s,t)=>s+(t.ganancia_neta||0),0);
+    const gDiarios = gastos.filter(g=>new Date(g.fecha).getMonth()===i && new Date(g.fecha).getFullYear()===2026).reduce((s,g)=>s+(g.monto||0),0);
+    const gFijos = Object.values(fijos).reduce((s,obj)=>s+(obj[i+1]||0),0);
+    return {mes,cobrado,ganancia,gDiarios,gFijos,total_gastos:gDiarios+gFijos,balance:ganancia-gDiarios-gFijos,trabajos:tMes.length};
+  });
+  const maxGan = Math.max(...rows.map(r=>r.ganancia));
+
+  return `
+  <div class="section-title">Comparativo Mensual 2026</div>
+  <div class="table-wrap" style="margin-bottom:16px">
+  <table>
+    <thead><tr><th>Mes</th><th>Cobrado</th><th>Ganancia Neta</th><th>Gastos Diarios</th><th>Gastos Fijos</th><th>Total Gastos</th><th>Balance Real</th><th>Trabajos</th><th></th></tr></thead>
+    <tbody>
+    ${rows.map(r=>`<tr>
+      <td style="font-weight:600;color:var(--text)">${r.mes}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--green2)">${r.cobrado>0?fmt(r.cobrado):''}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--green2);font-weight:700">${r.ganancia>0?fmt(r.ganancia):''}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--red2)">${r.gDiarios>0?fmt(r.gDiarios):''}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--red2)">${r.gFijos>0?fmt(r.gFijos):''}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--red2);font-weight:700">${r.total_gastos>0?fmt(r.total_gastos):''}</td>
+      <td style="font-family:'DM Mono',monospace;color:${r.balance>=0?'var(--green2)':'var(--red2)'};font-weight:700">${r.balance!==0?fmt(r.balance):''}</td>
+      <td style="text-align:center;color:var(--muted)">${r.trabajos||''}</td>
+      <td>${r.ganancia===maxGan && r.ganancia>0?'🏆':''}${r.ganancia===maxGan && r.ganancia>0?'<span style="font-size:9px;color:var(--gold)"> Mejor</span>':''}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-header"><div class="panel-title">Gráfico Comparativo</div></div>
+    <div class="chart-container" style="height:220px"><canvas id="chartAnalisis"></canvas></div>
+  </div>
+  <div class="section-title">Proyección Próximos 3 Meses</div>
+  <div class="panel">
+    ${(() => {
+      const activos = rows.filter(r=>r.ganancia>0);
+      const promGan = activos.length>0 ? activos.reduce((s,r)=>s+r.ganancia,0)/activos.length : 0;
+      const promGas = activos.length>0 ? activos.reduce((s,r)=>s+r.total_gastos,0)/activos.length : 0;
+      return [1,2,3].map(n=>{
+        const d = new Date(); d.setMonth(d.getMonth()+n);
+        const mn = d.toLocaleString('es',{month:'long',year:'numeric'});
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${mn}</div>
+          <div style="display:flex;gap:20px">
+            <div style="text-align:right"><div class="kpi-label">Ganancia proy.</div><div style="font-family:'DM Mono',monospace;color:var(--green2)">${fmt(promGan)}</div></div>
+            <div style="text-align:right"><div class="kpi-label">Gastos proy.</div><div style="font-family:'DM Mono',monospace;color:var(--red2)">${fmt(promGas)}</div></div>
+            <div style="text-align:right"><div class="kpi-label">Balance proy.</div><div style="font-family:'DM Mono',monospace;color:${promGan-promGas>=0?'var(--green2)':'var(--red2)'};">${fmt(promGan-promGas)}</div></div>
+          </div>
+        </div>`;
+      }).join('');
+    })()}
+  </div>`;
+}
+
+function initChartAnalisis() {
+  const ctx = document.getElementById('chartAnalisis');
+  if(!ctx) return;
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const ganData = meses.map((_,i) => trabajos.filter(t=>t.cobrado==='Si'&&new Date(t.fecha).getMonth()===i&&new Date(t.fecha).getFullYear()===2026).reduce((s,t)=>s+(t.ganancia_neta||0),0));
+  const gasData = meses.map((_,i) => gastos.filter(g=>new Date(g.fecha).getMonth()===i&&new Date(g.fecha).getFullYear()===2026).reduce((s,g)=>s+(g.monto||0),0));
+  chartInstance = new Chart(ctx, {
+    type:'bar',
+    data:{labels:meses, datasets:[
+      {label:'Ganancia Neta',data:ganData,backgroundColor:'rgba(39,174,96,0.7)',borderRadius:4},
+      {label:'Gastos Diarios',data:gasData,backgroundColor:'rgba(192,57,43,0.7)',borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7A8FA6',font:{size:10}}}},
+      scales:{x:{ticks:{color:'#7A8FA6',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},
+              y:{ticks:{color:'#7A8FA6',font:{size:9},callback:v=>'S/.'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}
+  });
+}
+
+// ─── META DIARIA ────────────────────────────────
+function renderMetaDiaria() {
+  const f = calcFinanzas();
+  const hoy = new Date(); const inicio = new Date(hoy.getFullYear(),0,1);
+  const diasAno = Math.floor((hoy-inicio)/(1000*60*60*24));
+  const metaAhorro = diasAno * 10;
+  const pct = metaAhorro > 0 ? Math.min(f.totalAhorrado/metaAhorro*100,100) : 0;
+  const diff = f.totalAhorrado - metaAhorro;
+  const diasM = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const mesesN = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  return `
+  <div class="kpi-grid" style="margin-bottom:16px">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Días transcurridos ${hoy.getFullYear()}</div>
+      <div class="kpi-value blue">${diasAno}</div>
+      <div class="kpi-sub">días</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">Meta acumulada a hoy</div>
+      <div class="kpi-value gold">${fmt(metaAhorro)}</div>
+      <div class="kpi-sub">S/. 10 × ${diasAno} días</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Ahorrado real</div>
+      <div class="kpi-value green">${fmt(f.totalAhorrado)}</div>
+    </div>
+    <div class="kpi-card ${diff>=0?'green':'red'}">
+      <div class="kpi-label">Diferencia</div>
+      <div class="kpi-value ${diff>=0?'green':'red'}">${fmt(Math.abs(diff))}</div>
+      <div class="kpi-sub">${diff>=0?'🟢 Adelantado':'🔴 Atrasado'}</div>
+    </div>
+  </div>
+  <div class="semaforo" style="margin-bottom:16px">
+    <div class="sem-dot ${diff>=0?'green':'red'}"></div>
+    <div class="sem-info">
+      <div class="sem-title ${diff>=0?'green':'red'}">${diff>=0?'¡Vas bien! Meta al día o adelantada':'Estás atrasado en la meta diaria'}</div>
+      <div class="sem-desc">${diff>=0?`Llevas S/. ${diff.toFixed(2)} de ventaja`:`Necesitas depositar S/. ${Math.abs(diff).toFixed(2)} para ponerte al día`}</div>
+    </div>
+    <div class="sem-liq"><div class="sem-liq-label">Progreso</div><div class="sem-liq-val">${pct.toFixed(1)}%</div></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-header"><div class="panel-title">Progreso anual — Meta S/. 3,650</div></div>
+    <div class="meta-bar-track" style="height:12px"><div class="meta-bar-fill" style="width:${pct}%"></div></div>
+    <div class="meta-labels" style="margin-top:6px">
+      <span>Ahorrado: ${fmt(f.totalAhorrado)}</span>
+      <span>Meta año: S/. 3,650 · ${(f.totalAhorrado/3650*100).toFixed(1)}%</span>
+    </div>
+  </div>
+  <div class="section-title">Proyección mensual S/. 10 diarios</div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Mes</th><th>Días</th><th>Meta del Mes</th><th>Acumulado Meta</th></tr></thead>
+    <tbody>
+    ${(() => {
+      let acum = 0;
+      return mesesN.map((m,i) => {
+        acum += diasM[i]*10;
+        return `<tr>
+          <td style="font-weight:600">${m}</td>
+          <td style="text-align:center;color:var(--muted)">${diasM[i]}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--gold)">${fmt(diasM[i]*10)}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--green2);font-weight:700">${fmt(acum)}</td>
+        </tr>`;
+      }).join('');
+    })()}
+    <tr style="background:rgba(39,174,96,0.08)">
+      <td style="font-weight:700;color:var(--green2)">TOTAL AÑO</td>
+      <td style="text-align:center;color:var(--muted)">365</td>
+      <td></td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--green2)">${fmt(3650)}</td>
+    </tr>
+    </tbody>
+  </table>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════════════
+let metaModalOpen = false;
+
+function openAddModal() {
+  if(currentPage==='trabajos'||currentPage==='monitor') { document.getElementById('modalTrabajo').classList.add('open'); }
+  else if(currentPage==='gastos') { document.getElementById('modalGasto').classList.add('open'); }
+  else if(currentPage==='ahorros') { document.getElementById('modalRetiro').classList.add('open'); }
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openMetaModal() {
+  const nombre = prompt('Nombre de la meta (ej: Laptop, Herramientas):');
+  if(!nombre) return;
+  const monto = parseFloat(prompt('Monto objetivo (S/.):'));
+  if(isNaN(monto)||monto<=0) return;
+  saveMeta({nombre, monto_objetivo: monto});
+}
+
+function updateClienteFields() {
+  const tipo = document.getElementById('t_tipo_cliente').value;
+  document.getElementById('grp_coord').style.display = tipo==='empresa_coord' ? 'flex' : 'none';
+  document.getElementById('grp_edificio').style.display = tipo==='empresa_coord' ? 'flex' : 'none';
+  document.getElementById('grp_cliente').querySelector('label').textContent = tipo==='independiente' ? 'Cliente' : 'Nombre de Empresa';
+  document.getElementById('t_cliente').placeholder = tipo==='independiente' ? 'Nombre del cliente' : 'Ej: Zentral, 4A';
+}
+
+function calcGanancia() {
+  const c = parseFloat(document.getElementById('t_cobrado').value)||0;
+  const m = parseFloat(document.getElementById('t_materiales').value)||0;
+  const t = parseFloat(document.getElementById('t_terceros').value)||0;
+  const gan = c - m - t;
+  const sug = gan * 0.1;
+  document.getElementById('calc_ganancia').textContent = fmt(gan);
+  document.getElementById('calc_sug').textContent = fmt(sug);
+}
+
+// ═══════════════════════════════════════════════════
+// CRUD OPERATIONS
+// ═══════════════════════════════════════════════════
+async function saveTrabajo() {
+  const tipoCliente = document.getElementById('t_tipo_cliente').value;
+  const cobrado_val = parseFloat(document.getElementById('t_cobrado').value)||0;
+  const mat = parseFloat(document.getElementById('t_materiales').value)||0;
+  const ter = parseFloat(document.getElementById('t_terceros').value)||0;
+  const ganancia = cobrado_val - mat - ter;
+  const clienteInput = document.getElementById('t_cliente').value.trim();
+
+  const data = {
+    fecha: document.getElementById('t_fecha').value,
+    descripcion: document.getElementById('t_desc').value.trim(),
+    tipo: document.getElementById('t_tipo').value,
+    distrito: document.getElementById('t_distrito').value,
+    costo_cobrado: cobrado_val,
+    materiales: mat,
+    pago_terceros: ter,
+    ganancia_neta: ganancia,
+    sugerido_ahorro: ganancia * 0.1,
+    deposito_ahorro: parseFloat(document.getElementById('t_deposito').value)||0,
+    cobrado: document.getElementById('t_pagado').value,
+    estado: document.getElementById('t_estado').value,
+  };
+
+  if(tipoCliente === 'independiente') {
+    data.cliente = clienteInput;
+  } else {
+    data.empresa = clienteInput;
+    if(tipoCliente === 'empresa_coord') {
+      data.coordinador = document.getElementById('t_coordinador').value.trim();
+      data.edificio = document.getElementById('t_edificio').value.trim();
+    }
+  }
+
+  if(!data.descripcion || !data.fecha) { alert('Por favor ingresa descripción y fecha'); return; }
+
+  try {
+    await sb('trabajos', 'POST', data);
+    closeModal('modalTrabajo');
+    await loadAll();
+    showPage(currentPage);
+  } catch(e) {
+    alert('Error guardando: ' + e.message + '\n\nNota: Ejecuta el SQL de configuración en Supabase primero.');
+  }
+}
+
+async function saveGasto() {
+  const data = {
+    fecha: document.getElementById('g_fecha').value,
+    descripcion: document.getElementById('g_desc').value.trim(),
+    categoria: document.getElementById('g_cat').value,
+    monto: parseFloat(document.getElementById('g_monto').value)||0,
+  };
+  if(!data.fecha || data.monto<=0) { alert('Ingresa fecha y monto'); return; }
+  try {
+    await sb('gastos', 'POST', data);
+    closeModal('modalGasto');
+    await loadAll();
+    showPage(currentPage);
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function saveRetiro() {
+  const data = {
+    fecha: document.getElementById('r_fecha').value,
+    descripcion: document.getElementById('r_desc').value.trim(),
+    tipo: document.getElementById('r_tipo').value,
+    monto: parseFloat(document.getElementById('r_monto').value)||0,
+  };
+  if(!data.fecha || data.monto<=0) { alert('Ingresa fecha y monto'); return; }
+  try {
+    await sb('retiros', 'POST', data);
+    closeModal('modalRetiro');
+    await loadAll();
+    showPage(currentPage);
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function saveFijo(nombre, mes, valor) {
+  const monto = parseFloat(valor)||0;
+  if(!fijos[nombre]) fijos[nombre]={};
+  fijos[nombre][mes] = monto;
+  try {
+    const existing = await sb(`gastos_fijos?nombre=eq.${encodeURIComponent(nombre)}&mes=eq.${mes}`);
+    if(existing && existing.length>0) {
+      await sb(`gastos_fijos?nombre=eq.${encodeURIComponent(nombre)}&mes=eq.${mes}`, 'PATCH', {monto});
+    } else {
+      await sb('gastos_fijos', 'POST', {nombre, mes, monto});
+    }
+  } catch(e) { console.warn('Fijo error:', e.message); }
+}
+
+async function saveMeta(data) {
+  try {
+    await sb('metas', 'POST', data);
+    await loadAll();
+    showPage('metas');
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+async function deleteTrabajo(id) {
+  if(!confirm('¿Eliminar este trabajo?')) return;
+  try { await sb('trabajos?id=eq.'+id, 'DELETE'); await loadAll(); showPage(currentPage); }
+  catch(e) { alert('Error: '+e.message); }
+}
+
+async function deleteGasto(id) {
+  if(!confirm('¿Eliminar este gasto?')) return;
+  try { await sb('gastos?id=eq.'+id, 'DELETE'); await loadAll(); showPage(currentPage); }
+  catch(e) { alert('Error: '+e.message); }
+}
+
+async function deleteRetiro(id) {
+  if(!confirm('¿Eliminar este retiro?')) return;
+  try { await sb('retiros?id=eq.'+id, 'DELETE'); await loadAll(); showPage(currentPage); }
+  catch(e) { alert('Error: '+e.message); }
+}
+
+// ═══════════════════════════════════════════════════
+// SIDEBAR MOBILE
+// ═══════════════════════════════════════════════════
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+if(loggedIn) {
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('appPage').style.display='flex';
+  initApp();
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabase = window.supabase.createClient(
+  "https://jehwvynsximgzjfzzefi.supabase.co",
+  "sb_publishable_iUdAuqsmE-pADO4ThZySxg_tahsOfWZ"
+);
+
+// 🔥 PRUEBA: insertar un trabajo
+async function guardarPrueba() {
+  const { data, error } = await supabase
+    .from('trabajos')
+    .insert([
+      {
+        fecha: new Date().toISOString().split('T')[0],
+        descripcion: "Prueba desde app",
+        costo_cobrado: 100,
+        ganancia_neta: 100
+      }
+    ]);
+
+  if (error) {
+    alert("Error: " + error.message);
+  } else {
+    alert("Guardado en Supabase 🔥");
+    console.log(data);
+  }
+}
+</script>
+</body>
+<button onclick="guardarPrueba()">Guardar prueba</button>
+</html>
